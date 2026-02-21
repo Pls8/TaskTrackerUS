@@ -1,0 +1,142 @@
+@model List<TaskTracker.Application.DTOs.TaskDto>
+@{
+    ViewData["Title"] = "Tasks";
+    
+    // Logic to calculate overall progress
+    var sections = Model.Where(t => t.IsSection).OrderBy(t => t.Title).ToList();
+    // Tasks that are not sections and have no parent (shouldn't exist in new seeder but good to handle)
+    var looseTasks = Model.Where(t => !t.IsSection && !t.ParentTaskId.HasValue).OrderBy(t => t.Title).ToList();
+    var allChildren = Model.Where(t => !t.IsSection && t.ParentTaskId.HasValue).ToList();
+
+    decimal totalWeight = sections.Sum(s => s.TaskWeightPercentage ?? 0) + looseTasks.Sum(t => t.TaskWeightPercentage ?? 0);
+    // Overall Progress is sum of Section Progress (which is sum of children weighted) + loose tasks weighted
+    decimal overallProgress = sections.Sum(s => s.SectionProgressPercentage ?? 0) + looseTasks.Sum(t => t.TaskWeightedProgressPercentage ?? 0);
+    
+    // Check if total weight is 100%
+    bool isWeightValid = Math.Abs(totalWeight - 100) < 0.01m;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Tasks</h1>
+            <div class="mt-2">
+                <span class="badge bg-primary fs-6">Overall Platform Progress: @overallProgress.ToString("F0")%</span>
+                @if (!isWeightValid)
+                {
+                    <span class="badge bg-danger fs-6 ms-2" title="Total weight should be 100%">Total Weight: @totalWeight.ToString("F0")%</span>
+                }
+                else
+                {
+                    <span class="badge bg-success fs-6 ms-2">Total Weight: 100%</span>
+                }
+            </div>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">Create New Task</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 30%;">Description / Task</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>End Date</th>
+                    <th>Owner</th>
+                    <th class="text-center">Comp (%)</th>
+                    <th class="text-center">Weight (%)</th>
+                    <th class="text-center" title="Weighted Progress = (Comp * Weight) / 100">W. Prog (%)</th>
+                    <th class="text-center">Section (%)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @* 1. Render Sections and their Children *@
+                @foreach (var projectSection in sections)
+                {
+                    <tr class="table-secondary fw-bold">
+                        <td>@projectSection.Title</td>
+                        <td><span class="badge bg-secondary">@projectSection.Priority</span></td>
+                        <td>@projectSection.Status</td>
+                        <td>@(projectSection.EndDate.HasValue ? projectSection.EndDate.Value.ToShortDateString() : "-")</td>
+                        <td>@projectSection.Owner</td>
+                        <td class="text-center">-</td> <!-- Sections don't have direct manual completion usually, computed from children -->
+                        <td class="text-center">@((projectSection.TaskWeightPercentage ?? 0).ToString("F0"))%</td>
+                        <td class="text-center">-</td>
+                        <td class="text-center">@((projectSection.SectionProgressPercentage ?? 0).ToString("F0"))%</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@projectSection.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <form asp-action="Delete" asp-route-id="@projectSection.Id" method="post" class="d-inline" onsubmit="return confirm('Delete section and all its tasks?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    
+                    // Children of this section
+                    var children = allChildren.Where(c => c.ParentTaskId == projectSection.Id).OrderBy(c => c.StartDate).ToList();
+                    foreach (var child in children)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <i class="bi bi-arrow-return-right me-2 text-muted"></i> @child.Description
+                            </td>
+                            <td>
+                                <span class="badge bg-@(child.Priority.ToString() == "Critical" ? "danger" : child.Priority.ToString() == "High" ? "warning" : "info")">
+                                    @child.Priority
+                                </span>
+                            </td>
+                            <td>@child.Status</td>
+                            <td>@(child.EndDate.HasValue ? child.EndDate.Value.ToShortDateString() : "-")</td>
+                            <td>@child.Owner</td>
+                            <td class="text-center">
+                                <div class="progress" style="height: 6px; width: 60px; margin: 0 auto 4px auto;">
+                                    <div class="progress-bar" role="progressbar" style="width: @(child.TaskCompletionPercentage ?? 0)%;" aria-valuenow="@(child.TaskCompletionPercentage ?? 0)" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small>@((child.TaskCompletionPercentage ?? 0).ToString("F0"))%</small>
+                            </td>
+                            <td class="text-center">@((child.TaskWeightPercentage ?? 0).ToString("F0"))%</td>
+                            <td class="text-center">@((child.TaskWeightedProgressPercentage ?? 0).ToString("F0"))%</td>
+                            <td class="text-center text-muted">-</td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@child.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form asp-action="Delete" asp-route-id="@child.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this task?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+
+                @* 2. Render Loose Tasks (if any) *@
+                @if (looseTasks.Any())
+                {
+                    <tr class="table-warning">
+                        <td colspan="10"><strong>Unassigned Tasks</strong></td>
+                    </tr>
+                    @foreach (var task in looseTasks)
+                    {
+                        <tr>
+                            <td>@task.Description</td>
+                            <td>@task.Priority</td>
+                            <td>@task.Status</td>
+                            <td>@(task.EndDate.HasValue ? task.EndDate.Value.ToShortDateString() : "-")</td>
+                            <td>@task.Owner</td>
+                            <td class="text-center">@((task.TaskCompletionPercentage ?? 0).ToString("F0"))%</td>
+                            <td class="text-center">@((task.TaskWeightPercentage ?? 0).ToString("F0"))%</td>
+                            <td class="text-center">@((task.TaskWeightedProgressPercentage ?? 0).ToString("F0"))%</td>
+                            <td class="text-center">-</td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form asp-action="Delete" asp-route-id="@task.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

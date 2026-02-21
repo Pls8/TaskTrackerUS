@@ -1,0 +1,37 @@
+@model List<SiteDto>
+@{
+    ViewData["Title"] = "Sites";
+}
+
+<div class="container-fluid">
+    <h1 class="mb-4">Project Sites</h1>
+
+    <div class="row">
+        @foreach (var site in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">@site.Name</h5>
+                        <span class="badge bg-primary">@site.Status</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text"><strong>Location:</strong> @site.Location</p>
+                        <p class="card-text"><strong>Start:</strong> @site.StartDate.ToShortDateString()</p>
+                        <p class="card-text"><strong>Planned End:</strong> @site.PlannedEndDate.ToShortDateString()</p>
+                        
+                        <div class="mt-3">
+                            <label>Overall Progress</label>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: @(site.OverallProgress)%;" aria-valuenow="@site.OverallProgress" aria-valuemin="0" aria-valuemax="100">@site.OverallProgress.ToString("F0")%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a asp-controller="Tasks" asp-action="Index" asp-route-siteId="@site.Id" class="btn btn-sm btn-outline-secondary">View Tasks</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
