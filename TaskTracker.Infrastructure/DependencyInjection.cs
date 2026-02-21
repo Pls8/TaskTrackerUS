@@ -11,10 +11,21 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // 1. Try to get connection string from 'DATABASE_URL' environment variable (common in Render/Heroku)
-        var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+        // 1. Try to get connection string from 'CONNETION_STRING' (User specific typo) or 'CONNECTION_STRING'
+        var connectionString = Environment.GetEnvironmentVariable("CONNETION_STRING");
+        
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+        }
 
-        // 2. If not found, try standard configuration (appsettings.json or ConnectionStrings__DefaultConnection env var)
+        // 2. Try 'DATABASE_URL' environment variable (common in Render/Heroku)
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+        }
+
+        // 3. If not found, try standard configuration (appsettings.json or ConnectionStrings__DefaultConnection env var)
         if (string.IsNullOrEmpty(connectionString))
         {
             connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -42,9 +53,12 @@ public static class DependencyInjection
             catch (Exception ex)
             {
                 // Fallback or log if parsing fails, though in startup we might just let it crash
-                Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+                Console.WriteLine($"Error parsing Connection String URI: {ex.Message}");
             }
         }
+
+        // Diagnostic Log (Masked Password)
+        Console.WriteLine($"[Startup] Using Connection String: {(string.IsNullOrEmpty(connectionString) ? "NULL" : "Present (Password Hidden)")}");
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(
