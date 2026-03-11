@@ -1,3 +1,4 @@
+![image alt](https://github.com/Pls8/TaskTrackerUS/blob/master/RepoTaskTraker_00.jpg?raw=true)
 # TaskTracker
 
 TaskTracker is a web application designed to help users manage tasks and track project progress efficiently. It allows for organizing tasks into sections, assigning weights to tasks, and visualizing overall progress through a dashboard.
