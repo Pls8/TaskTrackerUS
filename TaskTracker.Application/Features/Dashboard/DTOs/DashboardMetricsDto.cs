@@ -22,6 +22,9 @@ public class DashboardMetricsDto
     public List<TaskDto> RecentActivities { get; set; } = new();
     public List<TaskDto> CurrentProjects { get; set; } = new();
     public List<TaskDto> UpcomingDeadlines { get; set; } = new();
+    
+    // Search Results
+    public List<TaskDto> SearchResults { get; set; } = new();
 }
 
 public class TaskStatusDistributionDto

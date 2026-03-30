@@ -25,6 +25,16 @@ public class GetDashboardMetricsHandler : IRequestHandler<GetDashboardMetricsQue
         // Use AsNoTracking for read-only queries to improve performance
         var query = _context.ProjectTasks.AsNoTracking();
 
+        // Apply search filter if provided
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchTerm = request.SearchTerm.Trim();
+            query = query.Where(t => 
+                t.Title.Contains(searchTerm) || 
+                t.Description.Contains(searchTerm) ||
+                t.Owner.Contains(searchTerm));
+        }
+
         // 1. Aggregations (Executed on DB side)
         var totalTasks = await query.CountAsync(cancellationToken);
         
@@ -105,7 +115,12 @@ public class GetDashboardMetricsHandler : IRequestHandler<GetDashboardMetricsQue
             // Map the limited lists
             RecentActivities = _mapper.Map<List<TaskDto>>(recentTasks),
             CurrentProjects = _mapper.Map<List<TaskDto>>(currentProjects),
-            UpcomingDeadlines = _mapper.Map<List<TaskDto>>(upcomingDeadlines)
+            UpcomingDeadlines = _mapper.Map<List<TaskDto>>(upcomingDeadlines),
+            
+            // Search Results (if search term provided)
+            SearchResults = !string.IsNullOrWhiteSpace(request.SearchTerm) 
+                ? _mapper.Map<List<TaskDto>>(query.Take(10).ToList()) 
+                : new List<TaskDto>()
         };
 
         return metrics;

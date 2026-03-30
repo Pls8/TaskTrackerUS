@@ -3,4 +3,4 @@ using TaskTracker.Application.Features.Dashboard.DTOs;
 
 namespace TaskTracker.Application.Features.Dashboard.Queries;
 
-public record GetDashboardMetricsQuery : IRequest<DashboardMetricsDto>;
+public record GetDashboardMetricsQuery(string SearchTerm = null) : IRequest<DashboardMetricsDto>;
