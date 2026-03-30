@@ -1,8 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTracker.Application.Features.Sites.Queries.GetAllSites;
 
 namespace TaskTracker.Web.Controllers;
+
+[Authorize]
 
 public class SitesController : Controller
 {

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TaskTracker.Application.Features.Tasks.Commands.CreateTask;
@@ -9,6 +10,8 @@ using TaskTracker.Application.Features.Tasks.Queries.GetTaskById;
 using TaskTracker.Web.ViewModels;
 
 namespace TaskTracker.Web.Controllers;
+
+[Authorize]
 
 public class TasksController : Controller
 {

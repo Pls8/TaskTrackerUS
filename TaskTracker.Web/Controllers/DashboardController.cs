@@ -1,8 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTracker.Application.Features.Dashboard.Queries;
 
 namespace TaskTracker.Web.Controllers;
+
+[Authorize]
 
 public class DashboardController : Controller
 {

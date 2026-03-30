@@ -361,3 +361,15 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# IDE / Editor
+.trae/
+.vscode/
+
+# Deployment Scripts & Local Config
+*.ps1
+ProjectIdea.md
+
+# Optional: Ignore Docker files if you only want source code
+# Dockerfile
+# docker-compose.yml
